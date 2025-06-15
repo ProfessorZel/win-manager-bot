@@ -19,6 +19,7 @@ import disable_user
 import ldap_pass
 import list_users
 import remove_group
+import unlock_user
 
 # Загрузка переменных окружения из .env файла
 # load_dotenv()
@@ -120,13 +121,13 @@ async def newuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-async def blockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def disableuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
     if len(context.args) != 1:
-        await update.message.reply_text("⚠️ Неверный формат, Использование: /blockuser IvanovVP")
+        await update.message.reply_text("⚠️ Неверный формат, Использование: /disableuser IvanovVP")
         return
 
     login = context.args[0]
@@ -176,17 +177,17 @@ async def listusers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(message, parse_mode='HTML')
 
-async def resetpassword(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def unlockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
     if len(context.args) != 1:
-        await update.message.reply_text("⚠️ Неверный формат, Использование: /blockuser IvanovVP")
+        await update.message.reply_text("⚠️ Неверный формат, Использование: /unlockuser IvanovVP")
         return
 
     login = context.args[0]
-    result = disable_user.disable_user(server, login)
+    result = unlock_user.unlock_user(server, login)
     await update.message.reply_text(
         ("✅ Успешно отключен." if result["success"] else "❌ Произошла ошибка") + "\n" +
         result["message"])
@@ -210,9 +211,9 @@ def main():
         ("vpnenable", vpnenable),
         ("vpndisable", vpndisable),
         ("newuser", newuser),
-        ("blockuser", blockuser),
+        ("disableuser", disableuser),
         ("listusers", listusers),
-        ("resetpass", resetpassword)
+        ("unlockuser", unlockuser)
     ]
 
     for cmd, handler in commands:
