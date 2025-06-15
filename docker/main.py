@@ -189,7 +189,7 @@ async def unlockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     login = context.args[0]
     result = unlock_user.unlock_user(server, login)
     await update.message.reply_text(
-        ("✅ Успешно отключен." if result["success"] else "❌ Произошла ошибка") + "\n" +
+        ("✅ Успешно разблокирован." if result["success"] else "❌ Произошла ошибка") + "\n" +
         result["message"])
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
