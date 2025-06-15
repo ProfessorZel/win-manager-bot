@@ -1,0 +1,5 @@
+services:
+  bot:
+    build: ./docker
+    restart: always
+    env_file: ".env"
