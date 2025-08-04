@@ -208,19 +208,11 @@ def main():
     # Обработчик неизвестных команд
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-    # # Инициализация JobQueue
-    # job_queue = application.job_queue
-    # if job_queue is None:
-    #     job_queue = JobQueue()
-    #     job_queue.set_application(application)
-    #     application.job_queue = job_queue
-
     # Добавляем задачу синхронизации
     if hasattr(settings, 'group_perm_mapping') and settings.group_perm_mapping:
         application.job_queue.run_repeating(
             sync_perms_from_ad,
-            interval=3600,  # Каждый час
-            first=1  # Первый запуск через 10 сек
+            interval=settings.group_perms_sync_interval_seconds,  # Каждый час
         )
 
     logging.info(f"Бот запущен. ID администраторов: {settings.admin_ids}")
