@@ -1,7 +1,9 @@
-import os
-from dotenv import load_dotenv
-from ldap3 import Server, ALL
+import logging
+
 from telegram import Update, helpers
+from telegram.constants import (
+    ParseMode
+)
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -9,38 +11,16 @@ from telegram.ext import (
     MessageHandler,
     filters
 )
-from telegram.constants import (
-ParseMode
-)
 
-import add_group
-import create_user
-import disable_user
-import ldap_pass
-import list_users
-import remove_group
-import unlock_user
+from auth.perms_storage import check_perms
+from auth.sync_job import sync_perms_from_ad
+from operations import ldap_pass, list_users, create_user, add_group, disable_user, remove_group
+from common.config import settings
 
-# Загрузка переменных окружения из .env файла
-# load_dotenv()
-
-# Получение конфигурации из переменных окружения
-BOT_TOKEN = os.getenv("TOKEN")
-ADMIN_IDS = [int(admin_id.strip()) for admin_id in os.getenv("ADMINS", "").split(",") if admin_id.strip()]
-
-ldap_server = os.getenv("LDAP_SERVER")
-# Подключаемся к серверу
-server = Server(ldap_server, get_info=ALL, use_ssl=True)  # Используем SSL
-
-VPN_ACCESS_GROUP = os.getenv("VPN_ACCESS_GROUP")
-
-def is_admin(user_id: int) -> bool:
-    """Проверяет, является ли пользователь администратором"""
-    return user_id in ADMIN_IDS
-
+logging.root.setLevel(logging.INFO)
 
 async def laps(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update.effective_user.id):
+    if not check_perms(update.effective_user.id, "laps"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
@@ -49,7 +29,7 @@ async def laps(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     pc_name = context.args[0]
 
-    laps_info = ldap_pass.get_computer_laps_password(server, pc_name)
+    laps_info = ldap_pass.get_computer_laps_password(pc_name)
     if laps_info['success']:
         await update.message.reply_text(f"✅ `{pc_name}`\n" +
                                         f"Логин: `"+helpers.escape_markdown(f"{pc_name}\\loc.admin", 2)+"`\n" +
@@ -64,7 +44,7 @@ async def laps(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def vpnenable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update.effective_user.id):
+    if not check_perms(update.effective_user.id, "vpnenable"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
@@ -73,13 +53,13 @@ async def vpnenable(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     login = context.args[0]
-    result = add_group.add_user_to_group(server, login, VPN_ACCESS_GROUP)
+    result = add_group.add_user_to_group(login, settings.vpn_access_group)
     await update.message.reply_text(("✅ Открыт доступ к VPN." if result["success"] else "❌ Произошла ошибка")+"\n"+
                                        result["message"])
 
 
 async def vpndisable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update.effective_user.id):
+    if not check_perms(update.effective_user.id, "vpndisable"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
@@ -88,13 +68,13 @@ async def vpndisable(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     login = context.args[0]
-    result = remove_group.remove_user_from_group(server, login, VPN_ACCESS_GROUP)
+    result = remove_group.remove_user_from_group(login, settings.vpn_access_group)
     await update.message.reply_text(("✅ Отозван доступ к VPN." if result["success"] else "❌ Произошла ошибка") + "\n" +
                                     result["message"])
 
 
 async def newuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update.effective_user.id):
+    if not check_perms(update.effective_user.id, "newuser"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
@@ -103,7 +83,7 @@ async def newuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     group, *full_name = context.args
-    result = create_user.create_user(server, ' '.join(full_name), group)
+    result = create_user.create_user(' '.join(full_name), group)
 
 
     if result['success']:
@@ -121,29 +101,29 @@ async def newuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-async def disableuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update.effective_user.id):
+async def blockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not check_perms(update.effective_user.id, "blockuser"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
     if len(context.args) != 1:
-        await update.message.reply_text("⚠️ Неверный формат, Использование: /disableuser IvanovVP")
+        await update.message.reply_text("⚠️ Неверный формат, Использование: /blockuser IvanovVP")
         return
 
     login = context.args[0]
-    result = disable_user.disable_user(server, login)
+    result = disable_user.disable_user(login)
     await update.message.reply_text(
         ("✅ Успешно отключен." if result["success"] else "❌ Произошла ошибка") + "\n" +
         result["message"])
 
 
 async def listusers(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update.effective_user.id):
+    if not check_perms(update.effective_user.id, "listusers"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
     """Команда для отображения пользователей по OU в виде таблицы"""
-    result = list_users.get_users_by_ou(server)
+    result = list_users.get_users_by_ou()
 
     if not result['success']:
         await update.message.reply_text(f"❌ Ошибка: {result['message']}")
@@ -177,43 +157,49 @@ async def listusers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(message, parse_mode='HTML')
 
-async def unlockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update.effective_user.id):
+async def resetpassword(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not check_perms(update.effective_user.id, "resetpassword"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
     if len(context.args) != 1:
-        await update.message.reply_text("⚠️ Неверный формат, Использование: /unlockuser IvanovVP")
+        await update.message.reply_text("⚠️ Неверный формат, Использование: /resetpass IvanovVP")
         return
 
     login = context.args[0]
-    result = unlock_user.unlock_user(server, login)
+    result = disable_user.disable_user(login)
     await update.message.reply_text(
-        ("✅ Успешно разблокирован." if result["success"] else "❌ Произошла ошибка") + "\n" +
+        ("✅ Успешно отключен." if result["success"] else "❌ Произошла ошибка") + "\n" +
         result["message"])
 
-async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Неизвестная команда.")
+async def unknown(update: Update, _: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Неизвестная команда. Ваш ID: {update.effective_user.id}")
+
+async def start(update: Update, _: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Ваш ID: {update.effective_user.id}")
 
 
 def main():
     # Проверка наличия обязательных переменных окружения
-    if not BOT_TOKEN:
+    if not settings.bot_token:
         raise ValueError("Не указан TOKEN в переменных окружения")
-    if not ADMIN_IDS:
+    if not settings.admin_ids:
         raise ValueError("Не указаны ADMINS в переменных окружения")
 
-    application = Application.builder().token(BOT_TOKEN).build()
+    application = Application.builder().token(settings.bot_token).build()
+
+    #application.create_task()
 
     # Регистрация обработчиков команд
     commands = [
+        ("start", start),
         ("laps", laps),
         ("vpnenable", vpnenable),
         ("vpndisable", vpndisable),
         ("newuser", newuser),
-        ("disableuser", disableuser),
+        ("blockuser", blockuser),
         ("listusers", listusers),
-        ("unlockuser", unlockuser)
+        ("resetpass", resetpassword)
     ]
 
     for cmd, handler in commands:
@@ -222,7 +208,22 @@ def main():
     # Обработчик неизвестных команд
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-    print(f"Бот запущен. ID администраторов: {ADMIN_IDS}")
+    # # Инициализация JobQueue
+    # job_queue = application.job_queue
+    # if job_queue is None:
+    #     job_queue = JobQueue()
+    #     job_queue.set_application(application)
+    #     application.job_queue = job_queue
+
+    # Добавляем задачу синхронизации
+    if hasattr(settings, 'group_perm_mapping') and settings.group_perm_mapping:
+        application.job_queue.run_repeating(
+            sync_perms_from_ad,
+            interval=3600,  # Каждый час
+            first=1  # Первый запуск через 10 сек
+        )
+
+    logging.info(f"Бот запущен. ID администраторов: {settings.admin_ids}")
     application.run_polling()
 
 
