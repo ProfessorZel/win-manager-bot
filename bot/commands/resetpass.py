@@ -6,13 +6,13 @@ from auth.perms_storage import check_perms
 from common.config import settings
 from operations.change_pass import reset_password
 
-async def resetpassword(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "resetpassword"):
+async def resetpass(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not check_perms(update.effective_user.id, "resetpass"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
     if len(context.args) != 1:
-        await update.message.reply_text("⚠️ Неверный формат, Использование: /resetpassword IvanovVP")
+        await update.message.reply_text("⚠️ Неверный формат, Использование: /resetpass IvanovVP")
         return
 
     login = context.args[0]

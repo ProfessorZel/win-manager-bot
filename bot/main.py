@@ -11,9 +11,9 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from auth.perms_storage import check_perms
 from auth.sync_job import sync_perms_from_ad
-from commands import laps
+from commands.laps import laps
 from commands.newuser import CHOOSING_GROUP, TYPING_FULL_NAME, cancel, newuser, group_chosen, full_name_received
-from commands.resetpass import resetpassword
+from commands.resetpass import resetpass
 from commands.vpn import vpnenable, vpndisable
 from common.config import settings
 from operations import list_users, disable_user
@@ -126,7 +126,7 @@ def main():
         ("vpndisable", vpndisable),
         ("disableuser", disableuser),
         ("listusers", listusers),
-        ("resetpass", resetpassword),
+        ("resetpass", resetpass),
         ("unlockuser", unlockuser),
     ]
 

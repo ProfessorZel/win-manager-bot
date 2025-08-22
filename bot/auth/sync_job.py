@@ -1,5 +1,3 @@
-# bot/tasks/sync_perms.py
-import asyncio
 import logging
 
 from telegram.ext import ContextTypes
@@ -18,11 +16,9 @@ async def sync_perms_from_ad(context: ContextTypes.DEFAULT_TYPE):
     for group_dn, perms in settings.group_perm_mapping.items():
         try:
             # Получаем пользователей группы
-
             members = get_group_members(group_dn,
                                         ['pager', 'sAMAccountName', 'userAccountControl'],
                                         actve_only=True)
-
             # Собираем полномочия по Telegram ID
             for user in members:
                 if 'pager' in user and user.pager.value:

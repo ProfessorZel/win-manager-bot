@@ -1,5 +1,3 @@
-from common.config import settings
-
 user_id_to_perm = {}
 
 def clear_all_perms():
