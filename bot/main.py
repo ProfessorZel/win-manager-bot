@@ -1,21 +1,23 @@
 import logging
 
-from telegram import Update, helpers
+from telegram import helpers
 from telegram.constants import (
     ParseMode
 )
 from telegram.ext import (
     Application,
     CommandHandler,
-    ContextTypes,
     MessageHandler,
     filters
 )
 
 from auth.perms_storage import check_perms
 from auth.sync_job import sync_perms_from_ad
+from commands.newuser import CHOOSING_GROUP, TYPING_FULL_NAME, cancel, newuser, group_chosen, full_name_received
 from operations import ldap_pass, list_users, create_user, add_group, disable_user, remove_group
 from common.config import settings
+from telegram import Update
+from telegram.ext import ContextTypes, ConversationHandler
 
 logging.root.setLevel(logging.INFO)
 
@@ -71,35 +73,6 @@ async def vpndisable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = remove_group.remove_user_from_group(login, settings.vpn_access_group)
     await update.message.reply_text(("✅ Отозван доступ к VPN." if result["success"] else "❌ Произошла ошибка") + "\n" +
                                     result["message"])
-
-
-async def newuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "newuser"):
-        await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
-        return
-
-    if len(context.args) < 2:
-        await update.message.reply_text("⚠️ Неверный формат, Использование: /newuser <role> <ФИО>")
-        return
-
-    group, *full_name = context.args
-    result = create_user.create_user(' '.join(full_name), group)
-
-
-    if result['success']:
-        await update.message.reply_text(
-            helpers.escape_markdown("✅ Добро пожаловать в домен.\n", 2) +
-            helpers.escape_markdown("Логин: ", 2) + "`" + helpers.escape_markdown(result['login'], 2) + "`\n" +
-            helpers.escape_markdown("Временный пароль: ", 2) + "||" + helpers.escape_markdown(result['temp_pass'], 2) + "||\n" +
-            helpers.escape_markdown(f"Подразделение: {result['ou']}\n", 2) +
-            helpers.escape_markdown(f"Группы: {','.join(result['groups_added'])}", 2),
-            parse_mode=ParseMode.MARKDOWN_V2
-        )
-        await update.message.reply_text(f"Статус создания: {result["message"]}")
-    else:
-        await update.message.reply_text(f"❌ Произошла ошибка: {result["message"]}")
-
-
 
 async def blockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not check_perms(update.effective_user.id, "blockuser"):
@@ -180,23 +153,30 @@ async def start(update: Update, _: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
-    # Проверка наличия обязательных переменных окружения
+    logging.warning("BOT STARTING")
     if not settings.bot_token:
         raise ValueError("Не указан TOKEN в переменных окружения")
-    if not settings.admin_ids:
-        raise ValueError("Не указаны ADMINS в переменных окружения")
 
     application = Application.builder().token(settings.bot_token).build()
 
-    #application.create_task()
+    # Регистрируем ConversationHandler для newuser
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('newuser', newuser)],
+        states={
+            CHOOSING_GROUP: [MessageHandler(filters.TEXT & ~filters.COMMAND, group_chosen)],
+            TYPING_FULL_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, full_name_received)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
 
-    # Регистрация обработчиков команд
+    application.add_handler(conv_handler)
+
+    # Остальные обработчики...
     commands = [
         ("start", start),
         ("laps", laps),
         ("vpnenable", vpnenable),
         ("vpndisable", vpndisable),
-        ("newuser", newuser),
         ("blockuser", blockuser),
         ("listusers", listusers),
         ("resetpass", resetpassword)
@@ -209,13 +189,12 @@ def main():
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
 
     # Добавляем задачу синхронизации
-    if hasattr(settings, 'group_perm_mapping') and settings.group_perm_mapping:
-        application.job_queue.run_repeating(
-            sync_perms_from_ad,
-            interval=settings.group_perms_sync_interval_seconds,  # Каждый час
-        )
+    application.job_queue.run_repeating(
+        sync_perms_from_ad,
+        interval=settings.group_perms_sync_interval_seconds,  # Каждый час
+        first=1,
+    )
 
-    logging.info(f"Бот запущен. ID администраторов: {settings.admin_ids}")
     application.run_polling()
 
 

@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 #load_dotenv()
 class Settings:
     bot_token = os.getenv("TOKEN")
-    admin_ids = [int(admin_id.strip()) for admin_id in os.getenv("ADMINS", "").split(",") if admin_id.strip()]
     ldap_server = os.getenv("LDAP_SERVER")
     vpn_access_group = os.getenv("VPN_ACCESS_GROUP")
     ad_bind_user = os.getenv("AD_BIND_USER")
