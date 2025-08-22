@@ -17,10 +17,26 @@ from commands.resetpass import resetpassword
 from commands.vpn import vpnenable, vpndisable
 from common.config import settings
 from operations import list_users, disable_user
+from operations.unlockuser import unlock_user
 
 logging.root.setLevel(logging.INFO)
 
-async def blockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def unlockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not check_perms(update.effective_user.id, "unlockuser"):
+        await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
+        return
+
+    if len(context.args) != 1:
+        await update.message.reply_text("⚠️ Неверный формат, Использование: /unlockuser IvanovVP")
+        return
+
+    login = context.args[0]
+    result = unlock_user(login)  # Предполагается, что функция unlock_user импортирована
+    await update.message.reply_text(
+        ("✅ Учетная запись успешно разблокирована." if result["success"] else "❌ Произошла ошибка") + "\n" +
+        result["message"])
+
+async def disableuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not check_perms(update.effective_user.id, "blockuser"):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
@@ -108,9 +124,10 @@ def main():
         ("laps", laps),
         ("vpnenable", vpnenable),
         ("vpndisable", vpndisable),
-        ("blockuser", blockuser),
+        ("disableuser", disableuser),
         ("listusers", listusers),
-        ("resetpass", resetpassword)
+        ("resetpass", resetpassword),
+        ("unlockuser", unlockuser),
     ]
 
     for cmd, handler in commands:
