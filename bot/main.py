@@ -1,78 +1,24 @@
 import logging
 
-from telegram import helpers
-from telegram.constants import (
-    ParseMode
-)
+from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
     filters
 )
+from telegram.ext import ContextTypes, ConversationHandler
 
 from auth.perms_storage import check_perms
 from auth.sync_job import sync_perms_from_ad
+from commands import laps
 from commands.newuser import CHOOSING_GROUP, TYPING_FULL_NAME, cancel, newuser, group_chosen, full_name_received
-from operations import ldap_pass, list_users, create_user, add_group, disable_user, remove_group
+from commands.resetpass import resetpassword
+from commands.vpn import vpnenable, vpndisable
 from common.config import settings
-from telegram import Update
-from telegram.ext import ContextTypes, ConversationHandler
+from operations import list_users, disable_user
 
 logging.root.setLevel(logging.INFO)
-
-async def laps(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "laps"):
-        await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
-        return
-
-    if len(context.args) != 1:
-        await update.message.reply_text(f"⚠️ Неверный формат, необходимо передать имя компьюетра: /laps PC1")
-        return
-    pc_name = context.args[0]
-
-    laps_info = ldap_pass.get_computer_laps_password(pc_name)
-    if laps_info['success']:
-        await update.message.reply_text(f"✅ `{pc_name}`\n" +
-                                        f"Логин: `"+helpers.escape_markdown(f"{pc_name}\\loc.admin", 2)+"`\n" +
-                                        f"Пароль: ||{helpers.escape_markdown(laps_info['laps_password'], 2)}||\n"+
-            f"Срок действия: {helpers.escape_markdown(laps_info['laps_expiry'], 2)} {helpers.escape_markdown(laps_info['laps_expiry_status'], 2)}\n"+
-            (f"ОС: {helpers.escape_markdown(laps_info['os'], 2)}"  if 'os' in laps_info else "")+
-            (f"LastLogon: {helpers.escape_markdown(laps_info['last_logon'], 2)}"  if 'last_logon' in laps_info else ""),
-            parse_mode=ParseMode.MARKDOWN_V2
-        )
-    else:
-        await update.message.reply_text(f"❌ Произошла ошибка: {laps_info['message']}")
-
-
-async def vpnenable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "vpnenable"):
-        await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
-        return
-
-    if len(context.args) != 1:
-        await update.message.reply_text(f"⚠️ Неверный формат, необходимо передать имя пользователя: /vpnenable IvanovVP")
-        return
-
-    login = context.args[0]
-    result = add_group.add_user_to_group(login, settings.vpn_access_group)
-    await update.message.reply_text(("✅ Открыт доступ к VPN." if result["success"] else "❌ Произошла ошибка")+"\n"+
-                                       result["message"])
-
-
-async def vpndisable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "vpndisable"):
-        await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
-        return
-
-    if len(context.args) != 1:
-        await update.message.reply_text(f"⚠️ Неверный формат, необходимо передать имя пользователя: /vpndisable IvanovVP")
-        return
-
-    login = context.args[0]
-    result = remove_group.remove_user_from_group(login, settings.vpn_access_group)
-    await update.message.reply_text(("✅ Отозван доступ к VPN." if result["success"] else "❌ Произошла ошибка") + "\n" +
-                                    result["message"])
 
 async def blockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not check_perms(update.effective_user.id, "blockuser"):
@@ -130,20 +76,6 @@ async def listusers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(message, parse_mode='HTML')
 
-async def resetpassword(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "resetpassword"):
-        await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
-        return
-
-    if len(context.args) != 1:
-        await update.message.reply_text("⚠️ Неверный формат, Использование: /resetpass IvanovVP")
-        return
-
-    login = context.args[0]
-    result = disable_user.disable_user(login)
-    await update.message.reply_text(
-        ("✅ Успешно отключен." if result["success"] else "❌ Произошла ошибка") + "\n" +
-        result["message"])
 
 async def unknown(update: Update, _: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Неизвестная команда. Ваш ID: {update.effective_user.id}")
@@ -168,7 +100,6 @@ def main():
         },
         fallbacks=[CommandHandler('cancel', cancel)]
     )
-
     application.add_handler(conv_handler)
 
     # Остальные обработчики...

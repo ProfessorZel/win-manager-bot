@@ -21,4 +21,5 @@ class Settings:
     disabled_ou = os.getenv("DISABLED_OU")
     group_perm_mapping = json.loads(os.getenv("GROUP_PERM_MAPPING"))
     group_perms_sync_interval_seconds = os.getenv("GROUP_PERM_SYNC_INTERVAL_SECONDS", 3600)
+    remove_new_password_msg_after = os.getenv("REMOVE_NEW_PASSWORD_MSG_AFTER", 120)
 settings = Settings()

@@ -11,7 +11,7 @@ from common.ldap import get_connection
 def generate_random_password(length=32):
     """Генерирует случайный безопасный пароль заданной длины"""
     alphabet = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+    return ''.join(secrets.choice(alphabet) for _ in range(length))+"@Aa1"
 
 def disable_user(username: str) -> dict:
     """
