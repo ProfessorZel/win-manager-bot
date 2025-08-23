@@ -2,12 +2,12 @@ from telegram import Update, helpers
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from auth.perms_storage import check_perms
+from auth.perms_storage import check_perms, Permissions
 from operations.laps_pass import get_computer_laps_password
 
 
 async def laps(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "laps"):
+    if not check_perms(update.effective_user.id, Permissions.LAPS):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 

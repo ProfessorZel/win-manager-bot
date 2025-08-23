@@ -1,9 +1,8 @@
 import json
 import os
 
-from dotenv import load_dotenv
+from auth.perms_storage import Permissions
 
-#load_dotenv()
 class Settings:
     bot_token = os.getenv("TOKEN")
     ldap_server = os.getenv("LDAP_SERVER")

@@ -1,4 +1,3 @@
-import random
 import secrets
 import string
 
@@ -6,16 +5,16 @@ from ldap3.core.exceptions import LDAPException
 from common.config import settings
 from common.ldap import get_connection
 
+rand = secrets.SystemRandom()
 
-def generate_random_password(length=8):
+def generate_random_password(min_length=8, max_length=12):
     """Генерирует случайный безопасный пароль заданной длины"""
-    chars = list(secrets.token_urlsafe(length - 4) +
-         random.choice(string.ascii_lowercase) +
-         random.choice(string.ascii_uppercase) +
-         random.choice(string.digits) +
-         random.choice(string.punctuation))
-    random.shuffle(chars)
-
+    chars = list(secrets.token_urlsafe(rand.randint(min_length, max_length) - 4) +
+         rand.choice(string.ascii_lowercase) +
+         rand.choice(string.ascii_uppercase) +
+         rand.choice(string.digits) +
+         rand.choice(string.punctuation))
+    rand.shuffle(chars)
     return ''.join(chars)
 
 

@@ -3,7 +3,7 @@ from telegram import helpers, ReplyKeyboardRemove, Update, ReplyKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import ConversationHandler, ContextTypes
 
-from auth.perms_storage import check_perms
+from auth.perms_storage import check_perms, Permissions
 from common.config import settings
 from operations import create_user
 
@@ -11,7 +11,7 @@ CHOOSING_GROUP = "newuser.1"
 TYPING_FULL_NAME = "newuser.2"
 
 async def newuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "newuser"):
+    if not check_perms(update.effective_user.id, Permissions.NEWUSER):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return ConversationHandler.END
 

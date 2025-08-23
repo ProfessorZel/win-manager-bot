@@ -2,23 +2,24 @@ from telegram import Update, helpers
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from auth.perms_storage import check_perms
+from auth.perms_storage import check_perms, Permissions
 from common.config import settings
 from operations.change_pass import reset_password
 
 async def resetpass(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "resetpass"):
+    if not check_perms(update.effective_user.id, Permissions.RESETPASS):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
-    if len(context.args) != 1:
-        await update.message.reply_text("⚠️ Неверный формат, Использование: /resetpass IvanovVP")
+    if len(context.args) < 1:
+        await update.message.reply_text("⚠️ Неверный формат, Использование: /resetpass IvanovVP ИЛИ /resetpass IvanovVP {pass}")
         return
 
     login = context.args[0]
+    new_pass = context.args[1] if len(context.args) > 1 else None
 
     # Вызываем функцию сброса пароля
-    result = reset_password(login)
+    result = reset_password(login, new_pass)
 
     # Формируем ответное сообщение
     if result["success"]:

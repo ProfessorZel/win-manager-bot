@@ -1,14 +1,14 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from auth.perms_storage import check_perms
+from auth.perms_storage import check_perms, Permissions
 from common.config import settings
 from operations.add_group import add_user_to_group
 from operations.remove_group import remove_user_from_group
 
 
 async def vpnenable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "vpnenable"):
+    if not check_perms(update.effective_user.id,  Permissions.VPNENABLE):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
@@ -23,7 +23,7 @@ async def vpnenable(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def vpndisable(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not check_perms(update.effective_user.id, "vpndisable"):
+    if not check_perms(update.effective_user.id, Permissions.VPNDISABLE):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
         return
 
