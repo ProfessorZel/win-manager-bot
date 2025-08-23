@@ -11,7 +11,6 @@ from operations.unlockuser import unlock_user
 async def unlockuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not check_perms(update.effective_user.id, Permissions.UNLOCKUSER):
         await update.message.reply_text(f"⚠️ Требуются права администратора. Ваш ID: {update.effective_user.id}")
-        writeAuditLog()
         return
 
     if len(context.args) != 1:

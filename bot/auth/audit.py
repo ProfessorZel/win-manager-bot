@@ -5,9 +5,9 @@ from auth.perms_storage import get_user
 
 audit_log = logging.getLogger("audit")
 
-def writeAuditLog(action: str, executor: int, message: str, args: object):
+def writeAuditLog(action: str, executor: int, message: str, args: object = None):
     user = get_user(executor)
     logging.info(
-        f"{action} выполнено ({user.user_id}){user.login} с результатом: {message}, дополнительные параметры:" +
+        f"{action} выполнено ({user.user_id}) {user.login} с результатом: {message}, дополнительные параметры:" +
         json.dumps(args, ensure_ascii=False, sort_keys=True)
     )
