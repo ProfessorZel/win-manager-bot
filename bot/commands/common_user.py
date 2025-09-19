@@ -1,3 +1,5 @@
+from datetime import datetime, timezone, timedelta
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -51,8 +53,13 @@ async def listusers(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Ошибка: {result['message']}")
         return
 
+    # Текущая дата для сравнения
+    now = datetime.now(timezone.utc)
+    thirty_days_ago = now - timedelta(days=30)
+
     # Формируем текстовый список
     message = "📋 <b>Список пользователей по подразделениям</b>\n\n"
+    message += "⚠️ - неактивные пользователи (созданы >30 дней назад и не входили >30 дней)\n\n"
 
     for ou, users in result['users_by_ou'].items():
         if not users:
@@ -66,7 +73,24 @@ async def listusers(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for i, user in enumerate(users, 1):
             login = user['sAMAccountName'] or "нет логина"
             name = user['displayName'] or "нет имени"
-            message += f"{i}. <code>{login}</code> - {name}\n"
+
+            # Проверяем условия для отметки неактивного пользователя
+            is_inactive = False
+            if user['whenCreated'] and user['lastLogonTimestamp']:
+                # Пользователь считается неактивным, если:
+                # 1. Аккаунт создан более 30 дней назад
+                # 2. Последний вход был более 30 дней назад
+                if (user['whenCreated'] < thirty_days_ago and
+                        user['lastLogonTimestamp'] < thirty_days_ago):
+                    is_inactive = True
+            elif user['whenCreated']:
+                # Если нет информации о последнем входе, но аккаунт старше 30 дней
+                if user['whenCreated'] < thirty_days_ago:
+                    is_inactive = True
+
+            # Добавляем отметку для неактивных пользователей
+            inactive_mark = "⚠️ " if is_inactive else ""
+            message += f"{i}. {inactive_mark}<code>{login}</code> - {name}\n"
 
         message += "\n"  # Добавляем пустую строку между отделами
 
