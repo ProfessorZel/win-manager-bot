@@ -1,3 +1,5 @@
+import logging
+
 import ldap3
 from ldap3.core.exceptions import LDAPException
 from datetime import datetime, timezone
@@ -36,25 +38,12 @@ def get_users_by_ou() -> dict:
                 # Преобразование lastLogonTimestamp в datetime
                 last_logon_timestamp = None
                 if 'lastLogonTimestamp' in entry and entry.lastLogonTimestamp.value not in (None, 0):
-                    # Windows File Time to Unix Timestamp
-                    windows_timestamp = int(entry.lastLogonTimestamp.value)
-                    unix_timestamp = windows_timestamp / 10_000_000 - 116_444_736_00
-                    last_logon_timestamp = datetime.fromtimestamp(unix_timestamp, timezone.utc)
+                    last_logon_timestamp = entry.lastLogonTimestamp.value
 
                 # Преобразование whenCreated в datetime
                 account_created = None
                 if 'whenCreated' in entry and entry.whenCreated.value not in (None, ""):
-                    # whenCreated хранится в формате обобщенного времени (Generalized Time)
-                    # Пример: 20230101000000.0Z
-                    created_str = str(entry.whenCreated.value)
-                    try:
-                        # Преобразуем строку в datetime объект
-                        account_created = datetime.strptime(created_str, "%Y%m%d%H%M%S.%fZ")
-                    except ValueError:
-                        # Альтернативный формат, если нет миллисекунд
-                        account_created = datetime.strptime(created_str, "%Y%m%d%H%M%SZ")
-                    # Устанавливаем часовой пояс UTC
-                    account_created = account_created.replace(tzinfo=timezone.utc)
+                    account_created = entry.whenCreated.value
 
                 user_info = {
                     'sAMAccountName': entry.sAMAccountName.value if 'sAMAccountName' in entry else None,
@@ -68,8 +57,10 @@ def get_users_by_ou() -> dict:
         result['message'] = f"Найдено пользователей: {sum(len(users) for users in result['users_by_ou'].values())}"
 
     except LDAPException as e:
+        logging.error(e, exc_info=True)
         result['message'] = f"Ошибка LDAP: {str(e)}"
     except Exception as e:
+        logging.error(e, exc_info=True)
         result['message'] = f"Критическая ошибка: {str(e)}"
     finally:
         if 'conn' in locals() and conn.bound:

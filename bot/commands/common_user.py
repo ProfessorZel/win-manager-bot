@@ -89,8 +89,8 @@ async def listusers(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     is_inactive = True
 
             # Добавляем отметку для неактивных пользователей
-            inactive_mark = "⚠️ " if is_inactive else ""
-            message += f"{i}. {inactive_mark}<code>{login}</code> - {name}\n"
+            inactive_mark = " ⚠️" if is_inactive else ""
+            message += f"{i}. <code>{login}</code> - {name}{inactive_mark}\n"
 
         message += "\n"  # Добавляем пустую строку между отделами
 
