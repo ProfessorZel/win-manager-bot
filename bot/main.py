@@ -15,6 +15,7 @@ from commands.laps import laps
 from commands.newuser import CHOOSING_GROUP, TYPING_FULL_NAME, cancel, newuser, group_chosen, full_name_received
 from commands.resetpass import resetpass
 from commands.vpn import vpnenable, vpndisable
+from commands.wol import wolpc
 from common.config import settings
 
 logging.root.setLevel(logging.INFO)
@@ -55,6 +56,7 @@ def main():
         ("listusers", listusers),
         ("resetpass", resetpass),
         ("unlockuser", unlockuser),
+        ("wol", wolpc),
     ]
 
     for cmd, handler in commands:

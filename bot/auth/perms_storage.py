@@ -9,6 +9,7 @@ class Permissions(Enum):
     RESETPASS = "resetpass"
     VPNENABLE = "vpnenable"
     VPNDISABLE = "vpndisable"
+    WOLPCEXEC = "wolpc"
 
 class UserObject:
     user_id: int

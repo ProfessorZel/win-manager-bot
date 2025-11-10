@@ -2,7 +2,6 @@ import logging
 
 import ldap3
 from ldap3.core.exceptions import LDAPException
-from datetime import datetime, timezone
 
 from common.config import settings
 from common.ldap import get_connection
