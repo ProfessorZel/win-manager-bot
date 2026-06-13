@@ -28,4 +28,4 @@ jobs:
         with:
           context: ./bot
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/win-manager-bot:latest
+          tags: ghcr.io/professorzel/win-manager-bot:latest
