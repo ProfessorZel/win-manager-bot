@@ -1,6 +1,6 @@
 services:
   bot:
-    build: ./bot
+    image: ghcr.io/professorzel/win-manager-bot:latest
     restart: always
     env_file: ".env"
     network_mode: host

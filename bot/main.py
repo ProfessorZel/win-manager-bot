@@ -8,6 +8,7 @@ from telegram.ext import (
     filters
 )
 from telegram.ext import ContextTypes, ConversationHandler
+from telegram.request import HTTPXRequest
 
 from auth.sync_job import sync_perms_from_ad
 from commands.common_user import disableuser, listusers, unlockuser
@@ -33,7 +34,10 @@ def main():
     if not settings.bot_token:
         raise ValueError("Не указан TOKEN в переменных окружения")
 
-    application = Application.builder().token(settings.bot_token).build()
+    builder = Application.builder().token(settings.bot_token)
+    if settings.proxy_url:
+        builder = builder.request(HTTPXRequest(proxy=settings.proxy_url))
+    application = builder.build()
 
     # Регистрируем ConversationHandler для newuser
     conv_handler = ConversationHandler(
