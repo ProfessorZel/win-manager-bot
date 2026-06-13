@@ -36,7 +36,8 @@ def main():
 
     builder = Application.builder().token(settings.bot_token)
     if settings.proxy_url:
-        builder = builder.request(HTTPXRequest(proxy=settings.proxy_url))
+        proxy_request = HTTPXRequest(proxy=settings.proxy_url)
+        builder = builder.request(proxy_request).get_updates_request(proxy_request)
     application = builder.build()
 
     # Регистрируем ConversationHandler для newuser
