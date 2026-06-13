@@ -12,7 +12,7 @@ async def wolpc(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if len(context.args) != 1:
-        await update.message.reply_text(f"⚠️ Неверный формат, необходимо передать имя компьюетра: /wol PC1")
+        await update.message.reply_text(f"⚠️ Неверный формат, необходимо передать имя компьютера: /wol PC1")
         return
 
     pc_name = context.args[0]

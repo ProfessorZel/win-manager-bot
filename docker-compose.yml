@@ -3,3 +3,4 @@ services:
     build: ./bot
     restart: always
     env_file: ".env"
+    network_mode: host

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from ldap3.core.exceptions import LDAPException
+from ldap3.utils.conv import escape_filter_chars
 
 from common.config import settings
 from common.ldap import get_connection
@@ -24,7 +25,7 @@ def get_computer_mac(computer_name: str) -> dict:
         conn = get_connection()
 
         # Поиск компьютерного аккаунта
-        search_filter = f"(&(objectClass=computer)(sAMAccountName={computer_name}$))"
+        search_filter = f"(&(objectClass=computer)(sAMAccountName={escape_filter_chars(computer_name)}$))"
         attrs = [
             'pager',
             'distinguishedName'
