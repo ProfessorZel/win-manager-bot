@@ -42,14 +42,20 @@ def main():
         builder = builder.request(proxy_request).get_updates_request(proxy_request)
     application = builder.build()
 
+    # Фильтр исключающий чат поддержки — туда команды не обрабатываем
+    not_support = (
+        ~filters.Chat(chat_id=settings.support_chat_id)
+        if settings.support_chat_id else filters.ALL
+    )
+
     # Регистрируем ConversationHandler для newuser
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('newuser', newuser)],
+        entry_points=[CommandHandler('newuser', newuser, filters=not_support)],
         states={
             CHOOSING_GROUP: [MessageHandler(filters.TEXT & ~filters.COMMAND, group_chosen)],
             TYPING_FULL_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, full_name_received)],
         },
-        fallbacks=[CommandHandler('cancel', cancel)]
+        fallbacks=[CommandHandler('cancel', cancel, filters=not_support)]
     )
     application.add_handler(conv_handler)
 
@@ -68,10 +74,10 @@ def main():
     ]
 
     for cmd, handler in commands:
-        application.add_handler(CommandHandler(cmd, handler))
+        application.add_handler(CommandHandler(cmd, handler, filters=not_support))
 
     # Обработчик неизвестных команд
-    application.add_handler(MessageHandler(filters.COMMAND, unknown))
+    application.add_handler(MessageHandler(filters.COMMAND & not_support, unknown))
 
     # Добавляем задачу синхронизации
     application.job_queue.run_repeating(
