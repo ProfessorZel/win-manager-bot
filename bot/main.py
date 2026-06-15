@@ -17,6 +17,8 @@ from commands.newuser import CHOOSING_GROUP, TYPING_FULL_NAME, cancel, newuser, 
 from commands.resetpass import resetpass
 from commands.vpn import vpnenable, vpndisable
 from commands.wol import wolpc
+from commands.setmac import setmac
+from operations.sync_macs import sync_macs_job
 from common.config import settings
 
 logging.root.setLevel(logging.INFO)
@@ -62,6 +64,7 @@ def main():
         ("resetpass", resetpass),
         ("unlockuser", unlockuser),
         ("wol", wolpc),
+        ("setmac", setmac),
     ]
 
     for cmd, handler in commands:
@@ -73,8 +76,14 @@ def main():
     # Добавляем задачу синхронизации
     application.job_queue.run_repeating(
         sync_perms_from_ad,
-        interval=settings.group_perms_sync_interval_seconds,  # Каждый час
+        interval=settings.group_perms_sync_interval_seconds,
         first=1,
+    )
+
+    application.job_queue.run_repeating(
+        sync_macs_job,
+        interval=settings.mac_sync_interval_seconds,
+        first=60,
     )
 
     application.run_polling()
