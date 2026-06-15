@@ -18,6 +18,7 @@ from commands.resetpass import resetpass
 from commands.vpn import vpnenable, vpndisable
 from commands.wol import wolpc
 from commands.setmac import setmac
+from commands.lock_user import newlockuser, lock_user_name_received, cancel_lock_user, TYPING_LOCK_USER_NAME
 from operations.sync_macs import sync_macs_job
 from common.config import settings
 
@@ -58,6 +59,15 @@ def main():
         fallbacks=[CommandHandler('cancel', cancel, filters=not_support)]
     )
     application.add_handler(conv_handler)
+
+    lock_user_handler = ConversationHandler(
+        entry_points=[CommandHandler('newlockuser', newlockuser, filters=not_support)],
+        states={
+            TYPING_LOCK_USER_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, lock_user_name_received)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel_lock_user, filters=not_support)]
+    )
+    application.add_handler(lock_user_handler)
 
     # Остальные обработчики...
     commands = [

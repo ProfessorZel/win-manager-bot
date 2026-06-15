@@ -6,6 +6,7 @@ from telegram.ext import ConversationHandler, ContextTypes
 from auth.perms_storage import check_perms, Permissions
 from common.config import settings
 from operations import create_user
+from operations.add_lock_user import create_lock_user
 
 CHOOSING_GROUP = "newuser.1"
 TYPING_FULL_NAME = "newuser.2"
@@ -32,11 +33,17 @@ async def newuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
         result = create_user.create_user(' '.join(full_name), group)
 
         if result['success']:
+            lock_result = await create_lock_user(' '.join(full_name))
+            lock_line = (
+                helpers.escape_markdown("Код от замка: ", 2) + "||" + helpers.escape_markdown(lock_result['code'], 2) + "||"
+                if lock_result['success']
+                else helpers.escape_markdown(f"Код от замка: ❌ {lock_result['message']}", 2)
+            )
             await update.message.reply_text(
                 helpers.escape_markdown("✅ Добро пожаловать в домен.\n", 2) +
                 helpers.escape_markdown("Логин: ", 2) + "`" + helpers.escape_markdown(result['login'], 2) + "`\n" +
-                helpers.escape_markdown("Временный пароль: ", 2) + "||" + helpers.escape_markdown(result['temp_pass'],
-                                                                                                  2) + "||\n" +
+                helpers.escape_markdown("Временный пароль: ", 2) + "||" + helpers.escape_markdown(result['temp_pass'], 2) + "||\n" +
+                lock_line + "\n" +
                 helpers.escape_markdown(f"Подразделение: {result['ou']}\n", 2) +
                 helpers.escape_markdown(f"Группы: {','.join(result['groups_added'])}", 2),
                 parse_mode=ParseMode.MARKDOWN_V2
@@ -113,11 +120,17 @@ async def full_name_received(update: Update, context: ContextTypes.DEFAULT_TYPE)
     result = create_user.create_user(full_name, group)
 
     if result['success']:
+        lock_result = await create_lock_user(full_name)
+        lock_line = (
+            helpers.escape_markdown("Код от замка: ", 2) + "||" + helpers.escape_markdown(lock_result['code'], 2) + "||"
+            if lock_result['success']
+            else helpers.escape_markdown(f"Код от замка: ❌ {lock_result['message']}", 2)
+        )
         await update.message.reply_text(
             helpers.escape_markdown("✅ Добро пожаловать в домен.\n", 2) +
             helpers.escape_markdown("Логин: ", 2) + "`" + helpers.escape_markdown(result['login'], 2) + "`\n" +
-            helpers.escape_markdown("Временный пароль: ", 2) + "||" + helpers.escape_markdown(result['temp_pass'],
-                                                                                              2) + "||\n" +
+            helpers.escape_markdown("Временный пароль: ", 2) + "||" + helpers.escape_markdown(result['temp_pass'], 2) + "||\n" +
+            lock_line + "\n" +
             helpers.escape_markdown(f"Подразделение: {result['ou']}\n", 2) +
             helpers.escape_markdown(f"Группы: {','.join(result['groups_added'])}", 2),
             parse_mode=ParseMode.MARKDOWN_V2,

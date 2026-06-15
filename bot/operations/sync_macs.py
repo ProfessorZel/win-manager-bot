@@ -32,28 +32,28 @@ def get_computers_without_mac() -> list[dict]:
 async def sync_macs_job(context):
     computers = get_computers_without_mac()
     if not computers:
-        logging.info("MAC sync: все компьютеры уже имеют MAC")
+        logging.debug("MAC sync: все компьютеры уже имеют MAC")
         return
 
-    logging.info(f"MAC sync: найдено {len(computers)} компьютеров без MAC")
+    logging.debug(f"MAC sync: найдено {len(computers)} компьютеров без MAC")
     synced = 0
 
     for computer in computers:
         dns = computer['dns']
         if not dns:
-            logging.info(f"MAC sync: {computer['name']} — нет dNSHostName, пропуск")
+            logging.debug(f"MAC sync: {computer['name']} — нет dNSHostName, пропуск")
             continue
         ip = resolve_hostname(dns)
         if not ip:
-            logging.info(f"MAC sync: {computer['name']} ({dns}) — не резолвится, пропуск")
+            logging.debug(f"MAC sync: {computer['name']} ({dns}) — не резолвится, пропуск")
             continue
         mac = get_mac_by_ip(ip)
         if not mac:
-            logging.info(f"MAC sync: {computer['name']} ({ip}) — нет ARP-ответа, пропуск")
+            logging.debug(f"MAC sync: {computer['name']} ({ip}) — нет ARP-ответа, пропуск")
             continue
         result = set_computer_mac(computer['name'], mac)
         if result['success']:
-            logging.info(f"MAC sync: {computer['name']} → {mac}")
+            logging.debug(f"MAC sync: {computer['name']} → {mac}")
             synced += 1
 
-    logging.info(f"MAC sync: записано {synced} MAC-адресов")
+    logging.debug(f"MAC sync: записано {synced} MAC-адресов")

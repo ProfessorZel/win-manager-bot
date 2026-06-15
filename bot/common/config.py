@@ -22,6 +22,11 @@ class Settings:
     group_perms_sync_interval_seconds = os.getenv("GROUP_PERM_SYNC_INTERVAL_SECONDS", 3600)
     remove_new_password_msg_after = os.getenv("REMOVE_NEW_PASSWORD_MSG_AFTER", 120)
     proxy_url = os.getenv("PROXY_URL")
+    sciener_client_id = os.getenv("CLIENT_ID")
+    sciener_client_secret = os.getenv("CLIENT_SECRET")
+    sciener_username = os.getenv("SCIENER_USERNAME")
+    sciener_password = os.getenv("SCIENER_PASSWORD")
+    sciener_api_url = "https://euapi.sciener.com"
     support_chat_id = int(os.getenv("SUPPORT_CHAT_ID", 0))
     mac_sync_interval_seconds = int(os.getenv("MAC_SYNC_INTERVAL_SECONDS", 3600))
 settings = Settings()
