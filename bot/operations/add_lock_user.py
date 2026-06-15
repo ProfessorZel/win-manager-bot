@@ -12,7 +12,7 @@ async def create_lock_user(name: str) -> dict:
     try:
         code = str(random.randint(10000, 99999))
         data = await add_keyboard_password(name, code)
-        if data.get('errcode') == 0:
+        if 'keyboardPwdId' in data:
             result['success'] = True
             result['code'] = code
         else:
