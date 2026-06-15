@@ -41,12 +41,15 @@ async def sync_macs_job(context):
     for computer in computers:
         dns = computer['dns']
         if not dns:
+            logging.info(f"MAC sync: {computer['name']} — нет dNSHostName, пропуск")
             continue
         ip = resolve_hostname(dns)
         if not ip:
+            logging.info(f"MAC sync: {computer['name']} ({dns}) — не резолвится, пропуск")
             continue
         mac = get_mac_by_ip(ip)
         if not mac:
+            logging.info(f"MAC sync: {computer['name']} ({ip}) — нет ARP-ответа, пропуск")
             continue
         result = set_computer_mac(computer['name'], mac)
         if result['success']:

@@ -1,3 +1,5 @@
+import logging
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -12,8 +14,10 @@ async def _is_support_chat_member(bot, user_id: int) -> bool:
         return False
     try:
         member = await bot.get_chat_member(chat_id=settings.support_chat_id, user_id=user_id)
+        logging.info(f"WOL: user {user_id} status in support chat: {member.status}")
         return member.status in ('member', 'administrator', 'creator', 'restricted')
-    except Exception:
+    except Exception as e:
+        logging.warning(f"WOL: get_chat_member failed for {user_id}: {e}")
         return False
 
 
